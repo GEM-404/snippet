@@ -1,0 +1,23 @@
+
+// some notes to take home
+sometimes you might want to serve a single file from within a handler. For this there's the
+http.ServeFile() function, which you can use like so:
+
+func downloadHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./ui/static/file.zip")
+}
+
+http.Servefile() does not automatically sanitize the file path. If you're
+constructing a file path from untrusted user input, to avoid directory traversal attacks
+you must sanitize the input with filepath.Clean() befor using it.
+
+f, err := os.OpenFile("/tmp/info.log", os.O_RDWR|os.O_CREATE, 0666)
+
+if err != nil {
+	log.Fatal(err)
+}
+
+defer f.Close()
+
+infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
+
