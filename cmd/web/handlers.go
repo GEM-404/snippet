@@ -44,7 +44,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
 	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
-	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -62,6 +62,12 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	app.sessionManager.Put(r.Context(), "flash", "Snippet successfully created!")
 
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+}
+
+func ping(w http.ResponseWriter, r *http.Request) {
+	if _, err := w.Write([]byte("OK")); err != nil {
+		panic(err)
+	}
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -199,6 +205,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
 			form.AddNonFieldError("Email or password is incorrect")
+
 			data := app.newTemplateData(r)
 			data.Form = form
 			app.render(w, http.StatusUnprocessableEntity, "login.tmpl.html", data)
@@ -214,7 +221,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.sessionManager.Put(r.Context(), "authenticateUserID", id)
+	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
@@ -226,7 +233,7 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.sessionManager.Remove(r.Context(), "authenticateUserID")
+	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
 	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
